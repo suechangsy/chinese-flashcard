@@ -1,0 +1,11 @@
+{
+  "吃饭": { "en": "to eat a meal", "level": 1 },
+  "喝水": { "en": "to drink water", "level": 1 },
+  "看书": { "en": "to read a book", "level": 1 },
+  "去学校": { "en": "to go to school", "level": 1 },
+  "买东西": { "en": "to buy things", "level": 2 },
+  "喝茶": { "en": "to drink tea", "level": 1 },
+  "喜欢": { "en": "to like", "level": 1 },
+  "想": { "en": "to want / to think", "level": 1 },
+  "在": { "en": "to be at", "level": 1 }
+}

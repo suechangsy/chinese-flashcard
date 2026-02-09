@@ -1,0 +1,55 @@
+body {
+  font-family: Arial, "Noto Sans SC", sans-serif;
+  background: #f7f7f7;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.input-area {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+input {
+  padding: 8px;
+  font-size: 16px;
+}
+
+button {
+  padding: 8px 12px;
+  font-size: 16px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+.flashcard {
+  width: 300px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 2px solid #333;
+  border-radius: 10px;
+  background: white;
+  text-align: center;
+}
+
+.flashcard h2 {
+  font-size: 36px;
+  margin: 10px 0;
+}
+
+.pinyin {
+  font-size: 20px;
+  color: #555;
+}
+
+.flashcard p {
+  font-size: 18px;
+}
+
+#teacher-box {
+  text-align: center;
+  margin-top: 20px;
+}

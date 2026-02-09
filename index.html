@@ -1,177 +1,103 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>HSK 生字 Flashcard（教师可补充英文）</title>
+<meta charset="UTF-8">
+<title>Chinese Flashcard Generator</title>
 
-  <!-- 自动拼音 -->
-  <script src="https://unpkg.com/pinyin-pro"></script>
+<style>
+body { font-family: Arial, "Noto Sans SC"; padding:20px; background:#f7f7f7; }
+h1 { text-align:center; }
+input, button { padding:6px 10px; font-size:16px; margin:5px; }
+.flashcard { width:300px; margin:20px auto; padding:20px; border:2px solid #333; border-radius:10px; background:white; text-align:center; }
+.flashcard h2 { font-size:36px; margin:10px 0; }
+.pinyin { font-size:20px; color:#555; }
+</style>
 
-  <style>
-    body {
-      font-family: "PingFang SC","Microsoft YaHei",Arial;
-      background: #f6f8fb;
-      padding: 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-    h1 { text-align: center; }
+<!-- 拼音库 -->
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@2.8.0/dist/pinyin-pro.min.js"></script>
 
-    textarea {
-      width: 100%;
-      height: 120px;
-      font-size: 16px;
-      padding: 10px;
-      border-radius: 8px;
-    }
+<!-- PDF 导出 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    button, select, input {
-      margin: 6px;
-      padding: 6px 10px;
-      font-size: 14px;
-      border-radius: 6px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .card {
-      background: white;
-      border: 2px solid #333;
-      border-radius: 10px;
-      padding: 15px;
-      text-align: center;
-      page-break-inside: avoid;
-    }
-
-    .hanzi {
-      font-size: 42px;
-      margin-bottom: 10px;
-    }
-
-    .info {
-      font-size: 16px;
-      margin: 6px 0;
-    }
-
-    .warn {
-      color: red;
-      font-size: 14px;
-    }
-
-    @media print {
-      textarea, button, select, h1, p, input {
-        display: none;
-      }
-      .cards {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-  </style>
 </head>
 <body>
 
-<h1>🃏 中文生字 Flashcard（教师可补充英文）</h1>
+<h1>Chinese Flashcard Generator</h1>
 
-<p>📘 每行输入一个生字 / 词语：</p>
-<textarea id="input"></textarea>
+<input id="wordInput" placeholder="输入中文词语">
+<button onclick="generateCard()">生成 Flashcard</button>
 
-<p>
-  选择 HSK 等级：
-  <select id="level">
-    <option value="all">全部</option>
-    <option value="1">HSK 1</option>
-    <option value="2">HSK 2</option>
-    <option value="3">HSK 3</option>
-  </select>
-</p>
+<div id="card-area"></div>
 
-<button onclick="generate()">生成 Flashcard</button>
-<button onclick="window.print()">🖨️ 打印 Flashcard</button>
+<div id="teacher-box" style="display:none; text-align:center;">
+<h3>老师补充英文</h3>
+<input id="teacher-en" placeholder="English translation">
+<button onclick="saveTeacherTranslation()">保存</button>
+</div>
 
-<div class="cards" id="cards"></div>
+<button onclick="exportPDF()">📄 导出 A4 Flashcard PDF</button>
 
 <script>
-let hsk = {};
-let teacherDict = JSON.parse(localStorage.getItem("teacherDict") || "{}");
+// ===== 内置 HSK 示例数据 =====
+const HSK = {
+  "吃饭": { "en": "to eat a meal", "level": 1 },
+  "喝水": { "en": "to drink water", "level": 1 },
+  "看书": { "en": "to read a book", "level": 1 },
+  "去学校": { "en": "to go to school", "level": 1 },
+  "买东西": { "en": "to buy things", "level": 2 },
+  "喝茶": { "en": "to drink tea", "level": 1 },
+  "喜欢": { "en": "to like", "level": 1 },
+  "想": { "en": "to want / to think", "level": 1 },
+  "在": { "en": "to be at", "level": 1 }
+};
 
-fetch("hsk.json")
-  .then(res => res.json())
-  .then(data => hsk = data);
+let currentWord = "";
 
-function generate() {
-  const container = document.getElementById("cards");
-  container.innerHTML = "";
-
-  const words = document.getElementById("input").value
-    .split("\n")
-    .map(w => w.trim())
-    .filter(Boolean);
-
-  const levelFilter = document.getElementById("level").value;
-
-  words.forEach(word => {
-    const entry = hsk[word];
-    const teacherEntry = teacherDict[word];
-
-    if (entry && levelFilter !== "all" && entry.level != levelFilter) return;
-
-    const pinyin = window.pinyinPro.pinyin(word, { toneType: "symbol" });
-
-    let english = "";
-    let levelText = "";
-    let needTeacher = false;
-
-    if (entry) {
-      english = entry.english;
-      levelText = `HSK ${entry.level}`;
-    } else if (teacherEntry) {
-      english = teacherEntry;
-      levelText = "Teacher added";
-    } else {
-      english = "⚠️ 请老师补充英文";
-      levelText = "Not in HSK";
-      needTeacher = true;
-    }
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
-      <div class="hanzi">${word}</div>
-      <div class="info">拼音：${pinyin}</div>
-      <div class="info">英文：${english}</div>
-      <div class="${needTeacher ? 'warn' : ''}">${levelText}</div>
-      ${needTeacher ? `
-        <input placeholder="输入英文" id="eng-${word}">
-        <button onclick="saveEnglish('${word}')">保存</button>
-      ` : ""}
-      <button onclick="speak('${word}')">🔊 发音</button>
-    `;
-
-    container.appendChild(card);
-  });
+// ===== 自动拼音 =====
+function getPinyin(word) {
+  return pinyinPro.pinyin(word, { toneType: "symbol" });
 }
 
-function saveEnglish(word) {
-  const input = document.getElementById("eng-" + word);
-  if (!input.value.trim()) return;
+// ===== 生成卡片 =====
+function generateCard() {
+  const word = document.getElementById("wordInput").value.trim();
+  if (!word) return;
 
-  teacherDict[word] = input.value.trim();
-  localStorage.setItem("teacherDict", JSON.stringify(teacherDict));
-  generate();
+  currentWord = word;
+  let data = HSK[word];
+
+  // 老师补充优先
+  const saved = localStorage.getItem("custom_" + word);
+  if (saved) data = JSON.parse(saved);
+
+  const pinyinText = getPinyin(word);
+  const enText = data ? data.en : "⚠️ 请老师补充英文";
+
+  document.getElementById("card-area").innerHTML = `
+    <div class="flashcard" id="flashcard">
+      <h2>${word}</h2>
+      <p class="pinyin" id="pinyin" style="display:none">${pinyinText}</p>
+      <p>${enText}</p>
+      <button onclick="togglePinyin()">拼音</button>
+      <button onclick="speak()">🔊</button>
+    </div>
+  `;
+
+  document.getElementById("teacher-box").style.display =
+    data ? "none" : "block";
 }
 
-function speak(text) {
-  const u = new SpeechSynthesisUtterance(text);
+// ===== 显示/隐藏拼音 =====
+function togglePinyin() {
+  const p = document.getElementById("pinyin");
+  p.style.display = p.style.display === "none" ? "block" : "none";
+}
+
+// ===== 中文朗读 =====
+function speak() {
+  const u = new SpeechSynthesisUtterance(currentWord);
   u.lang = "zh-CN";
   speechSynthesis.speak(u);
 }
-</script>
 
-</body>
-</html>
+// ===== 老师补充英文
